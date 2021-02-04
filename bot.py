@@ -4,8 +4,12 @@ import os
 import requests
 from datetime import date, timedelta
 from pretty_help import PrettyHelp
+from pandas_datareader import data as pdr
+from tradingview_ta import TA_Handler, Interval, Exchange
 import plotly.graph_objects as go
 import plotly.express as px
+import plotly.colors as col
+import robin_stocks as r
 import yfinance as yf
 import pandas as pd
 
@@ -51,29 +55,74 @@ async def stock(ctx, stock_name):
 
 @bot.command()
 async def recom(ctx, stock_name):
-	"""Shows what different firms say about the stock"""
-	try:
+	"""Shows what you should do with a stock, buy or sell"""
+	"""try:
 		ticker = yf.Ticker(str(stock_name))
 		rec = pd.DataFrame(ticker.recommendations)
 	except:
 		return
-	await ctx.send("```" + str(rec.tail(1)) + "```")
+	await ctx.send("```" + str(rec.tail(1)) + "```")"""
+	try:
+		handler = TA_Handler(
+			symbol=str(stock_name),
+			screener="america",
+			exchange="NASDAQ",
+			interval=Interval.INTERVAL_1_DAY
+		)
+		analysis = handler.get_analysis()
+	except:
+		try:
+			handler = TA_Handler(
+				symbol=str(stock_name),
+				screener="america",
+				exchange="NYSE",
+				interval=Interval.INTERVAL_1_DAY
+			)
+			analysis = handler.get_analysis()
+		except:
+			try:
+
+				handler = TA_Handler(
+					symbol=str(stock_name),
+					screener="crypto",
+					exchange="binance",
+					interval=Interval.INTERVAL_1_DAY
+				)
+				analysis = handler.get_analysis()
+			except:
+				return
+	await ctx.send("```You should {0} {1} right NOW!```".format(analysis.summary['RECOMMENDATION'], stock_name))
+
 
 @bot.command()
 async def graph(ctx, stock_name, rang):
 	"""shows a graph for the stock"""
+	yf.pdr_override()
 	try:
-		stk = yf.Ticker(str(stock_name))
-		df = stk.history(period="max")
-		df = df.reset_index()
-		for i in ['Open', 'High', 'Close', 'Low']:
-			df[i] = df[i].astype('float64')
-		if int(rang) > 0 or int(rang) < 10000:
-			fig = px.line(df, x='Date', y='High', range_x=[str(date.today() - timedelta(int(rang))), str(date.today())])
+		if int(rang) > 7:
+			stk = pdr.get_data_yahoo(tickers=str(stock_name), period= str(rang) + "d", interval="1d", auto_adjust=True, threads=True)
+		else:
+			stk = pdr.get_data_yahoo(tickers=str(stock_name), period= str(rang) + "d", interval="15m", auto_adjust=True, threads=True)
+		if stk.empty:
+			return
+		else:
+			fig = px.line(stk, y='High', title=str(stock_name))
 			fig.write_image("./graph.png")
 			await ctx.send(file=discord.File("graph.png"))
 			os.remove("graph.png")
 	except:
 		return
+
+@bot.command()
+async def price(ctx, stock_name):
+	"""Shows the current price of the stock"""
+	try:
+		ticker_yahoo = yf.Ticker(stock_name)
+	except:
+		return
+	data = ticker_yahoo.history()
+	last_quote = (data.tail(1)['Close'].iloc[0])
+	await ctx.send("```" + str(last_quote) + "```")
+
 
 bot.run(TOKEN)
