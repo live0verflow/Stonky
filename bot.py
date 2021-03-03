@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #miscellaneous imports
 import os
@@ -30,8 +30,9 @@ week_ago = date.today() - timedelta(7)
 current_date = date.today() + timedelta(1)
 
 #initialization of the environment to run the bot
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
+#load_dotenv()
+f = open("/root/token", "r")
+TOKEN = f.readline()
 bot = commands.Bot(command_prefix="$", help_command=PrettyHelp())
 
 
@@ -108,20 +109,18 @@ async def recom(ctx, stock_name):
 async def graph(ctx, stock_name, rang):
 	"""shows a graph for the stock"""
 	yf.pdr_override() #use pandas data frame instead of yfinance format
-	try:
-		if int(rang) > 7: #if the user specified a time period greater than a week update every day
-			stk = pdr.get_data_yahoo(tickers=str(stock_name), period= str(rang) + "d", interval="1d", auto_adjust=True, threads=True)
-		elif int(rang) < 7 and int(rang) > 0: #less than a week every 15 minutes
-			stk = pdr.get_data_yahoo(tickers=str(stock_name), period= str(rang) + "d", interval="15m", auto_adjust=True, threads=True)
-		if stk.empty: #no stock specified; end
-			return
-		else:
-			fig = px.line(stk, y='High', title=str(stock_name)) #generate a stock graph from user specified constraints
-			fig.write_image("./graph.png") #generate image and send
-			await ctx.send(file=discord.File("graph.png"))
-			os.remove("graph.png") #delete image
-	except:
+	if int(rang) > 7: #if the user specified a time period greater than a week update every day
+		stk = pdr.get_data_yahoo(tickers=str(stock_name), period= str(rang) + "d", interval="1d", auto_adjust=True, threads=True)
+	elif int(rang) <= 7 and int(rang) > 0: #less than a week every 15 minutes
+		stk = pdr.get_data_yahoo(tickers=str(stock_name), period= str(rang) + "d", interval="15m", auto_adjust=True, threads=True)
+	if stk.empty: #no stock specified; end
 		return
+	else:
+		fig = px.line(stk, y='High', title=str(stock_name)) #generate a stock graph from user specified constraints
+		fig.write_image("./graph.png") #generate image and send
+		await ctx.send(file=discord.File("graph.png"))
+		os.remove("graph.png") #delete image
+	return
 
 @bot.command()
 async def price(ctx, stock_name):
