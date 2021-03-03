@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#remember to pip install kaleido
 #miscellaneous imports
 import os
 import asyncio
