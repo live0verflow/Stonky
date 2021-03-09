@@ -102,7 +102,7 @@ async def recom(ctx, stock_name):
 				analysis = handler.get_analysis()
 			except:
 				return #if none of the above end the function
-	await ctx.send("```You should {0} {1} right NOW!```".format(analysis.summary['RECOMMENDATION'], stock_name)) #tells the user what they should do with the stock or crypto
+	await ctx.send("```You should {0} {1} right NOW!```".format(''.join(analysis.summary['RECOMMENDATION'].replace('_', ' ')), stock_name)) #tells the user what they should do with the stock or crypto
 
 
 @bot.command()
