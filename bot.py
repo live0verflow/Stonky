@@ -31,7 +31,8 @@ current_date = date.today() + timedelta(1)
 
 #initialization of the environment to run the bot
 #load_dotenv()
-f = open("/root/token", "r")
+#f = open("/root/token", "r")
+f = open("../secret", "r")
 TOKEN = f.readline()
 bot = commands.Bot(command_prefix="$", help_command=PrettyHelp())
 
@@ -163,5 +164,19 @@ async def alert(ctx, name, pos, price):
 	except:
 		return
 
+
+@bot.command()
+async def cheat(ctx, lang, *query):
+
+    if lang == "help":
+        r = requests.get("https://cht.sh/" + ":" + lang)
+        if r.status_code == 200:
+            h = r.text[600:]
+            await ctx.send("```" + str(h) + "```")
+    else:
+        r = requests.get("https://cht.sh/" + lang + "/{}".format("+".join(query)) + "?QT")
+        print(r.text)
+        if r.status_code == 200:
+            await ctx.send("```" + str(lang) + "\n"+ str(r.text) + "```")
 
 bot.run(TOKEN)
